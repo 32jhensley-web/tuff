@@ -1,4 +1,3 @@
-import { GameMap } from "@openfront/engine-api/game/GameMap";
 import { GameConfig, GameConfigSchema } from "@openfront/engine-api/Schemas";
 import { z } from "zod";
 import { GameMapImpl, GameMapSnapshot } from "../game/GameMapImpl";
@@ -125,17 +124,18 @@ export interface RestoredMapsResult {
  * snapshot onto freshly loaded map instances. Used on the client so GameView's
  * local maps match the simulation state without waiting for per-tile deltas.
  */
+
 export function restoreMapsFromSnapshot(
   bytes: Uint8Array,
-  gameMap: GameMap,
-  miniGameMap?: GameMap,
+  gameMap: GameMapImpl,
+  miniGameMap?: GameMapImpl,
 ): RestoredMapsResult {
   const root = decodeRoot(bytes);
-  (gameMap as GameMapImpl).restoreSnapshot(
+  gameMap.restoreSnapshot(
     readVersioned(GameMapSnapshot, root.map),
   );
   if (miniGameMap) {
-    (miniGameMap as GameMapImpl).restoreSnapshot(
+    miniGameMap.restoreSnapshot(
       readVersioned(GameMapSnapshot, root.miniMap),
     );
   }
