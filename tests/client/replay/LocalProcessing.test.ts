@@ -16,6 +16,7 @@ import type {
   ReplayBase,
 } from "../../../src/client/replay/codec/ReplayTypes";
 import {
+  extractSnapshotInWorker,
   processInBrowser,
   type ProcessingHandlers,
 } from "../../../src/client/replay/LocalProcessing";
@@ -76,7 +77,10 @@ describe("processInBrowser", () => {
     );
     await vi.waitFor(() => expect(worker.posted).toHaveLength(1));
     // The two workers get the ends of one channel.
-    const request = worker.posted[0] as ProcessorRequest;
+    const request = worker.posted[0] as Extract<
+      ProcessorRequest,
+      { engine: MessagePort }
+    >;
     expect(request.record).toBe(RECORD);
     expect(engine.posted).toEqual([
       { type: "connect", port: expect.any(MessagePort) },
@@ -172,6 +176,77 @@ describe("processInBrowser", () => {
     expect(worker.posted).toEqual([]);
     expect(engine.posted).toEqual([]);
     expect(calls).toEqual([]);
+  });
+});
+
+describe("extractSnapshotInWorker", () => {
+  test("terminates worker and rejects if signal is aborted while in flight", async () => {
+    const worker = new FakeWorker();
+    const abortController = new AbortController();
+    const promise = extractSnapshotInWorker(
+      RECORD,
+      10,
+      "p1",
+      "c1",
+      undefined,
+      async () => worker as unknown as Worker,
+      abortController.signal,
+    );
+    await vi.waitFor(() => expect(worker.posted).toHaveLength(1));
+    abortController.abort();
+    await expect(promise).rejects.toThrow();
+    expect(worker.terminated).toBe(true);
+  });
+
+  test("terminates worker immediately if signal is already aborted", async () => {
+    const createWorker = vi.fn();
+    const abortController = new AbortController();
+    abortController.abort();
+    await expect(
+      extractSnapshotInWorker(
+        RECORD,
+        10,
+        "p1",
+        "c1",
+        undefined,
+        createWorker,
+        abortController.signal,
+      ),
+    ).rejects.toThrow();
+    expect(createWorker).not.toHaveBeenCalled();
+  });
+
+  test("does not create worker if map loading fails", async () => {
+    const createWorker = vi.fn();
+    const recordWithConfig = {
+      info: {
+        gameID: "abcd1234",
+        lobbyCreatedAt: 12345,
+        config: config(),
+        players: [],
+      },
+      turns: [],
+    } as unknown as GameRecord;
+    const failingLoader = {
+      getMapData: () => ({
+        manifest: () => Promise.reject(new Error("map fetch failed")),
+        mapBin: () => Promise.reject(new Error("map fetch failed")),
+        map4xBin: () => Promise.reject(new Error("map fetch failed")),
+      }),
+    } as any;
+    await expect(
+      extractSnapshotInWorker(
+        recordWithConfig,
+        10,
+        "p1",
+        "c1",
+        undefined,
+        createWorker,
+        undefined,
+        failingLoader,
+      ),
+    ).rejects.toThrow("map fetch failed");
+    expect(createWorker).not.toHaveBeenCalled();
   });
 });
 
