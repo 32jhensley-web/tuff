@@ -1580,6 +1580,7 @@
     "vietnam": "Vietnam",
     "warshipwarship": "Warship Warship",
     "world": "World",
+    "world4k": "World 4000",
     "worldinverted": "World Inverted",
     "yangtzeriver": "Yangtze River",
     "yellowsea": "Yellow Sea",
@@ -1615,7 +1616,11 @@
     "unfavorite": "Remove from favourites"
   },
   "map_layers": {
-    "label": "label"
+    "label": "label",
+    "w2kland": "w2kland",
+    "w2kwater": "w2kwater",
+    "w4kland": "w4kland",
+    "w4kwater": "w4kwater"
   },
   "marketing_consent": {
     "body": "News and updates by email. Change it anytime in your account.",
@@ -2008,7 +2013,6 @@
     "unlocked_cosmetic": "Cosmetic",
     "xp_bar_label": "Level progress",
     "xp_before_levels": "Played before levels existed, so there's no XP for this game.",
-    "xp_confirmed": "XP confirmed",
     "xp_heading": "XP earned",
     "xp_minus": "−{xp}",
     "xp_plus": "+{xp}",
